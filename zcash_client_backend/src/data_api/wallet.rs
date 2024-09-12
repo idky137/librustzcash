@@ -293,6 +293,9 @@ where
         usk,
         ovk_policy,
         &proposal,
+        #[cfg(feature = "transparent-inputs")]
+        None,
+        None,
     )
 }
 
@@ -400,6 +403,9 @@ where
         usk,
         ovk_policy,
         &proposal,
+        #[cfg(feature = "transparent-inputs")]
+        None,
+        None,
     )
 }
 
@@ -606,6 +612,10 @@ pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, N>(
     usk: &UnifiedSpendingKey,
     ovk_policy: OvkPolicy,
     proposal: &Proposal<FeeRuleT, N>,
+    #[cfg(feature = "transparent-inputs")] usk_to_tkey: Option<
+        fn(&UnifiedSpendingKey, &TransparentAddressMetadata) -> hdwallet::secp256k1::SecretKey,
+    >,
+    override_sapling_change_address: Option<sapling::PaymentAddress>,
 ) -> Result<NonEmpty<TxId>, ErrorT<DbT, InputsErrT, FeeRuleT>>
 where
     DbT: WalletWrite + WalletCommitmentTrees,
@@ -640,8 +650,9 @@ where
             step,
             #[cfg(feature = "transparent-inputs")]
             &mut unused_transparent_outputs,
-            None,
-            None,
+            #[cfg(feature = "transparent-inputs")]
+            usk_to_tkey,
+            override_sapling_change_address,
         )?;
         step_results.push((step, step_result));
     }
@@ -708,7 +719,7 @@ fn create_proposed_transaction<DbT, ParamsT, InputsErrT, FeeRuleT, N>(
         StepOutput,
         (TransparentAddress, OutPoint),
     >,
-    usk_to_tkey: Option<
+    #[cfg(feature = "transparent-inputs")] usk_to_tkey: Option<
         fn(&UnifiedSpendingKey, &TransparentAddressMetadata) -> hdwallet::secp256k1::SecretKey,
     >,
     override_sapling_change_address: Option<sapling::PaymentAddress>,
@@ -1410,5 +1421,7 @@ where
         usk,
         OvkPolicy::Sender,
         &proposal,
+        None,
+        None,
     )
 }

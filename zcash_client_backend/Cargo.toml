@@ -132,6 +132,9 @@ serde = { workspace = true, optional = true }
 tokio-rustls = { workspace = true, optional = true }
 webpki-roots = { workspace = true, optional = true }
 
+# - zingolib fork
+hdwallet = { git = "https://github.com/fluidvanadium/hdwallet.git", tag = "update_secp256k1_to_0.27.0" }
+
 [build-dependencies]
 tonic-build = { workspace = true, features = ["prost"] }
 which = "4"

@@ -1086,6 +1086,8 @@ impl<Cache> TestState<Cache> {
             usk,
             ovk_policy,
             proposal,
+            None,
+            None,
         )
     }
 

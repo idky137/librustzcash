@@ -1895,6 +1895,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "hdwallet"
+version = "0.4.2"
+source = "git+https://github.com/fluidvanadium/hdwallet.git?tag=update_secp256k1_to_0.27.0#fca2d8f5d93bfd4801a1ec5ba96f7a02d4c12eb7"
+dependencies = [
+ "lazy_static",
+ "rand_core 0.6.4",
+ "ring 0.16.20",
+ "secp256k1",
+ "thiserror",
+]
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5831,6 +5843,7 @@ dependencies = [
  "futures-util",
  "group",
  "gumdrop",
+ "hdwallet",
  "hex",
  "http-body-util",
  "hyper",
