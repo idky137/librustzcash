@@ -640,6 +640,8 @@ where
             step,
             #[cfg(feature = "transparent-inputs")]
             &mut unused_transparent_outputs,
+            None,
+            None,
         )?;
         step_results.push((step, step_result));
     }
@@ -706,6 +708,10 @@ fn create_proposed_transaction<DbT, ParamsT, InputsErrT, FeeRuleT, N>(
         StepOutput,
         (TransparentAddress, OutPoint),
     >,
+    usk_to_tkey: Option<
+        fn(&UnifiedSpendingKey, &TransparentAddressMetadata) -> hdwallet::secp256k1::SecretKey,
+    >,
+    override_sapling_change_address: Option<sapling::PaymentAddress>,
 ) -> Result<StepResult<<DbT as WalletRead>::AccountId>, ErrorT<DbT, InputsErrT, FeeRuleT>>
 where
     DbT: WalletWrite + WalletCommitmentTrees,
@@ -891,11 +897,16 @@ where
                                      outpoint: OutPoint,
                                      txout: TxOut|
          -> Result<(), ErrorT<DbT, InputsErrT, FeeRuleT>> {
-            let secret_key = usk
-                .transparent()
-                .derive_secret_key(address_metadata.scope(), address_metadata.address_index())
-                .expect("spending key derivation should not fail");
-
+            let secret_key = usk_to_tkey
+                .map(|f| f(usk, &address_metadata))
+                .unwrap_or_else(|| {
+                    usk.transparent()
+                        .derive_secret_key(
+                            address_metadata.scope(),
+                            address_metadata.address_index(),
+                        )
+                        .unwrap()
+                });
             utxos_spent.push(outpoint.clone());
             builder.add_transparent_input(secret_key, outpoint, txout)?;
 
@@ -1128,7 +1139,7 @@ where
             PoolType::Shielded(ShieldedProtocol::Sapling) => {
                 builder.add_sapling_output(
                     sapling_internal_ovk(),
-                    sapling_dfvk.change_address().1,
+                    override_sapling_change_address.unwrap_or(sapling_dfvk.change_address().1),
                     change_value.value(),
                     memo.clone(),
                 )?;
@@ -1150,7 +1161,7 @@ where
                 {
                     builder.add_orchard_output(
                         orchard_internal_ovk(),
-                        orchard_fvk.address_at(0u32, orchard::keys::Scope::Internal),
+                        orchard_fvk.address_at(0u32, orchard::keys::Scope::External),
                         change_value.value().into(),
                         memo.clone(),
                     )?;
