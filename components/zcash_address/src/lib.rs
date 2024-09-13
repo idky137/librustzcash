@@ -174,6 +174,10 @@ impl AddressKind {
 }
 
 impl ZcashAddress {
+    pub fn kind(&self) -> &AddressKind {
+        &self.kind
+    }
+
     /// Encodes this Zcash address in its canonical string representation.
     ///
     /// This provides the encoded string representation of the address as defined by the
