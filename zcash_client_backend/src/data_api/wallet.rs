@@ -1238,7 +1238,7 @@ where
     let build_result = builder.build(OsRng, spend_prover, output_prover, fee_rule)?;
 
     #[cfg(feature = "orchard")]
-    let orchard_internal_ivk = orchard_fvk.to_ivk(orchard::keys::Scope::Internal);
+    let orchard_internal_ivk = orchard_fvk.to_ivk(orchard::keys::Scope::External);
     #[cfg(feature = "orchard")]
     let orchard_outputs =
         orchard_output_meta
@@ -1263,13 +1263,13 @@ where
                             })
                     })
                     .internal_account_note_transpose_option()
-                    .expect("Wallet-internal outputs must be decryptable with the wallet's IVK");
+                    .expect("Wallet-external outputs must be decryptable with the wallet's IVK");
 
                 SentTransactionOutput::from_parts(output_index, recipient, value, memo)
             });
 
     let sapling_internal_ivk =
-        PreparedIncomingViewingKey::new(&sapling_dfvk.to_ivk(Scope::Internal));
+        PreparedIncomingViewingKey::new(&sapling_dfvk.to_ivk(Scope::External));
     let sapling_outputs =
         sapling_output_meta
             .into_iter()
@@ -1296,7 +1296,7 @@ where
                             })
                     })
                     .internal_account_note_transpose_option()
-                    .expect("Wallet-internal outputs must be decryptable with the wallet's IVK");
+                    .expect("Wallet-external outputs must be decryptable with the wallet's IVK");
 
                 SentTransactionOutput::from_parts(output_index, recipient, value, memo)
             });
