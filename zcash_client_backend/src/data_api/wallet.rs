@@ -293,8 +293,6 @@ where
         usk,
         ovk_policy,
         &proposal,
-        #[cfg(feature = "transparent-inputs")]
-        None,
         None,
     )
 }
@@ -403,8 +401,6 @@ where
         usk,
         ovk_policy,
         &proposal,
-        #[cfg(feature = "transparent-inputs")]
-        None,
         None,
     )
 }
@@ -612,9 +608,6 @@ pub fn create_proposed_transactions<DbT, ParamsT, InputsErrT, FeeRuleT, N>(
     usk: &UnifiedSpendingKey,
     ovk_policy: OvkPolicy,
     proposal: &Proposal<FeeRuleT, N>,
-    #[cfg(feature = "transparent-inputs")] usk_to_tkey: Option<
-        fn(&UnifiedSpendingKey, &TransparentAddressMetadata) -> hdwallet::secp256k1::SecretKey,
-    >,
     override_sapling_change_address: Option<sapling::PaymentAddress>,
 ) -> Result<NonEmpty<TxId>, ErrorT<DbT, InputsErrT, FeeRuleT>>
 where
@@ -650,8 +643,6 @@ where
             step,
             #[cfg(feature = "transparent-inputs")]
             &mut unused_transparent_outputs,
-            #[cfg(feature = "transparent-inputs")]
-            usk_to_tkey,
             override_sapling_change_address,
         )?;
         step_results.push((step, step_result));
@@ -718,9 +709,6 @@ fn create_proposed_transaction<DbT, ParamsT, InputsErrT, FeeRuleT, N>(
     #[cfg(feature = "transparent-inputs")] unused_transparent_outputs: &mut HashMap<
         StepOutput,
         (TransparentAddress, OutPoint),
-    >,
-    #[cfg(feature = "transparent-inputs")] usk_to_tkey: Option<
-        fn(&UnifiedSpendingKey, &TransparentAddressMetadata) -> hdwallet::secp256k1::SecretKey,
     >,
     override_sapling_change_address: Option<sapling::PaymentAddress>,
 ) -> Result<StepResult<<DbT as WalletRead>::AccountId>, ErrorT<DbT, InputsErrT, FeeRuleT>>
@@ -908,22 +896,16 @@ where
                                      outpoint: OutPoint,
                                      txout: TxOut|
          -> Result<(), ErrorT<DbT, InputsErrT, FeeRuleT>> {
-            let secret_key = usk_to_tkey
-                .map(|f| f(usk, &address_metadata))
-                .unwrap_or_else(|| {
-                    usk.transparent()
-                        .derive_secret_key(
-                            address_metadata.scope(),
-                            address_metadata.address_index(),
-                        )
-                        .unwrap()
-                });
+            let secret_key = usk
+                .transparent()
+                .derive_secret_key(address_metadata.scope(), address_metadata.address_index())
+                .expect("spending key derivation should not fail");
+
             utxos_spent.push(outpoint.clone());
             builder.add_transparent_input(secret_key, outpoint, txout)?;
 
             Ok(())
         };
-
         for utxo in proposal_step.transparent_inputs() {
             add_transparent_input(
                 &mut builder,
@@ -1421,7 +1403,6 @@ where
         usk,
         OvkPolicy::Sender,
         &proposal,
-        None,
         None,
     )
 }
